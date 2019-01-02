@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<title>SNOW/RAIN</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel=stylesheet href="css/base.css"/>
+</head>
+<body>
+
+<script src="js/Three.js"></script>
+<script src="js/Detector.js"></script>
+<script src="js/Stats.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/THREEx.KeyboardState.js"></script>
+<script src="js/THREEx.FullScreen.js"></script>
+<script src="js/THREEx.WindowResize.js"></script>
+
+<script src="js/ParticleEngine.js"></script>
+<script src="js/ParticleEngineExamples.js"></script>
+
+<!-- GUI for experimenting with values -->
+<script type='text/javascript' src='js/DAT.GUI.min.js'></script>
+
+<!-- jQuery code to display an information button and box when clicked. -->
+<script src="js/jquery-1.9.1.js"></script>
+<script src="js/jquery-ui.js"></script>
+<link rel=stylesheet href="css/jquery-ui.css" />
+<link rel=stylesheet href="css/info.css"/>
+<script src="js/info.js"></script>
+
+<!-- ------------------------------------------------------------ -->
+
+<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+<script>
+
+
+// standard global variables
+var container, scene, camera, renderer, controls, stats;
+var keyboard = new THREEx.KeyboardState();
+var clock = new THREE.Clock();
+// custom global variables
+var cube;
+	var floorMaterial;
+	var floorGeometry;
+	var floor;
+	var floorTexture;
+	var snow_arr;
+	var iter = 0;
+	var i = 1;
+	var current_floor;
+	var first_floor;
+	var rain_arr;
+	var issnow;
+	var israin;
+
+init();
+animate();
+
+// FUNCTIONS
+function init()
+{
+	issnow = 0;
+	israin = 1;
+	// SCENE
+	scene = new THREE.Scene();
+	// CAMERA
+	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 2, FAR = 5000;
+	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+	scene.add(camera);
+	camera.position.set(0,200,400);
+	camera.lookAt(scene.position);
+	// RENDERER
+	if ( Detector.webgl )
+		renderer = new THREE.WebGLRenderer( {antialias:true} );
+	else
+		renderer = new THREE.CanvasRenderer();
+	renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	container = document.getElementById( 'ThreeJS' );
+	container.appendChild( renderer.domElement );
+	// EVENTS
+	THREEx.WindowResize(renderer, camera);
+	THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+	// CONTROLS
+	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	// STATS
+	stats = new Stats();
+	stats.domElement.style.position = 'absolute';
+	stats.domElement.style.bottom = '0px';
+	stats.domElement.style.zIndex = 100;
+	container.appendChild( stats.domElement );
+	// LIGHT
+	var light = new THREE.PointLight(0xffffff);
+	light.position.set(0,250,0);
+	scene.add(light);
+	// FLOOR
+	
+	 snow_arr = new Array();
+	 rain_arr = new Array();
+	/////////////////////////////////////////////////////////////
+	 floorTexture = new THREE.ImageUtils.loadTexture( 'images2/snow0.jpg' );
+//	floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
+//	floorTexture.repeat.set( 10, 10 );
+	 floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
+	 floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	 floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -10.5;
+	floor.rotation.x = Math.PI / 2;
+	scene.add(floor);
+	snow_arr.push(floor);
+	rain_arr.push(floor);
+	current_floor = floor;
+	first_floor = floor;
+
+	/////////////////////////////////
+	
+
+	for(var j  = 1 ; j <= 6  ; j++){
+
+	var img_name = 'images2/snow' + j.toString() + '.png';
+	floorTexture = new THREE.ImageUtils.loadTexture( img_name  );
+	floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
+	floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -10.5;
+	floor.rotation.x = Math.PI / 2;
+	snow_arr.push(floor);
+
+	}
+
+	floorTexture = new THREE.ImageUtils.loadTexture( 'images2/snow2.jpg' );
+	floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
+	floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -10.5;
+	floor.rotation.x = Math.PI / 2;
+	snow_arr.push(floor);
+
+	for(var j  = 1 ; j <= 7  ; j++){
+
+	var img_name = 'images2/rain' + j.toString() + '.png';
+	floorTexture = new THREE.ImageUtils.loadTexture( img_name );
+	floorMaterial = new THREE.MeshBasicMaterial( { color: 0x444444, map: floorTexture, side: THREE.DoubleSide } );
+	 floorGeometry = new THREE.PlaneGeometry(1000, 1000, 10, 10);
+	 floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor.position.y = -10.5;
+	floor.rotation.x = Math.PI / 2;
+	rain_arr.push(floor);
+
+}
+
+	/////////////////////////////////
+	// SKYBOX/FOG
+	var skyBoxGeometry = new THREE.CubeGeometry( 4000, 4000, 4000 );
+	var skyBoxMaterial = new THREE.MeshBasicMaterial( { color: 0x000000, side: THREE.BackSide } );
+	var skyBox = new THREE.Mesh( skyBoxGeometry, skyBoxMaterial );
+    scene.add(skyBox);
+
+	
+	this.engine = new ParticleEngine();
+	engine.setValues( Examples.rain );
+	engine.initialize();
+
+	
+	gui = new dat.GUI();
+	
+	parameters =
+	{
+	rain:       function() { restartEngine( Examples.rain       ); issnow = 0 ; israin = 1 ;i=1 , iter = 0; scene.remove(current_floor); scene.add(first_floor);},
+	snow:       function() { restartEngine( Examples.snow       ); issnow = 1  ; israin = 0 ; i=1 , iter = 0 ; scene.remove(current_floor); scene.add(first_floor);} 
+		
+			};
+    gui.add( parameters, 'rain'       ).name("Rain");
+	gui.add( parameters, 'snow'       ).name("Snow");
+
+	gui.open();
+}
+
+
+function animate()
+{
+    requestAnimationFrame( animate );
+	render();
+	update();
+
+
+}
+
+function restartEngine(parameters)
+{
+	resetCamera();
+
+	engine.destroy();
+	engine = new ParticleEngine();
+	engine.setValues( parameters );
+	engine.initialize();
+}
+
+function resetCamera()
+{
+	// CAMERA
+	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
+	//camera.up = new THREE.Vector3( 0, 0, 1 );
+	camera.position.set(0,200,400);
+	camera.lookAt(scene.position);
+	scene.add(camera);
+
+	controls = new THREE.OrbitControls( camera, renderer.domElement );
+	THREEx.WindowResize(renderer, camera);
+}
+
+//var i = 1;
+function update()
+{
+
+
+	controls.update();
+	stats.update();
+
+	var dt = clock.getDelta();
+	engine.update( dt * 0.5 );
+	if((issnow == 1) && (israin == 0) && ((i % 2) == 0) && ((i / 10) <= snow_arr.length - 1 )){
+	//	alert(i);
+		iter = i/10;
+		scene.remove(snow_arr[iter-1]);
+		current_floor = snow_arr[iter];
+		scene.add(snow_arr[iter]);
+	}
+	else if((israin == 1) && (issnow == 0) && ((i % 2) == 0) && ((i / 10) <= rain_arr.length - 1 )){
+	//	alert(i);
+		iter = i/10;
+		scene.remove(rain_arr[iter-1]);
+		current_floor = rain_arr[iter];
+		scene.add(rain_arr[iter]);
+	}
+//alert(parameters);
+//	alert(interval);
+}
+var interval = setInterval( increment, 1000);
+
+function increment(){
+	i = i % 360 + 1;
+}
+function render()
+{
+	renderer.render( scene, camera );
+}
+
+</script>
+
+</body>
+</html>
