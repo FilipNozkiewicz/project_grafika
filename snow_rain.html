@@ -53,6 +53,7 @@ var cube;
 	var rain_arr;
 	var issnow;
 	var israin;
+	var i_bef = 1;
 
 init();
 animate();
@@ -222,26 +223,31 @@ function update()
 
 	var dt = clock.getDelta();
 	engine.update( dt * 0.5 );
-	if((issnow == 1) && (israin == 0) && ((i % 2) == 0) && ((i / 10) <= snow_arr.length - 1 )){
+	if((issnow == 1) && (israin == 0)  && (i != i_bef) && ((iter) <= snow_arr.length - 1 )){
 	//	alert(i);
-		iter = i/10;
+		
 		scene.remove(snow_arr[iter-1]);
 		current_floor = snow_arr[iter];
 		scene.add(snow_arr[iter]);
+		iter++;
+		i = i_bef;
 	}
-	else if((israin == 1) && (issnow == 0) && ((i % 2) == 0) && ((i / 10) <= rain_arr.length - 1 )){
+	else if((israin == 1) && (issnow == 0)  &&  (i != i_bef) && ((iter) <= rain_arr.length - 1 )){
 	//	alert(i);
-		iter = i/10;
+	
 		scene.remove(rain_arr[iter-1]);
 		current_floor = rain_arr[iter];
 		scene.add(rain_arr[iter]);
+		iter++;
+		i = i_bef;
 	}
 //alert(parameters);
 //	alert(interval);
 }
-var interval = setInterval( increment, 1000);
+var interval = setInterval( increment, 3000);
 
 function increment(){
+	i_bef = i;
 	i = i % 360 + 1;
 }
 function render()
